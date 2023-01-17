@@ -7,10 +7,12 @@
 
 import UIKit
 import SnapKit
+import RxSwift
 
 class MainViewController: UIViewController {
     
     let viewModel = MainViewModel()
+    let bag = DisposeBag()
     
     private var collectionView: UICollectionView!
     typealias Item = AnyHashable
@@ -26,17 +28,23 @@ class MainViewController: UIViewController {
         self.view.backgroundColor = .yellow
         viewModel.getWeatherData()
         configureCollectionView()
-        
-        applySnapshot(items: [viewModel.city], section: .main)
+        bind()
+//        applySnapshot(items: [viewModel.city], section: .main)
     }
     
     private func bind() {
+        viewModel.weather
+            .observe(on: MainScheduler.instance)
+            .subscribe { weather in
+                print("---> weather: \(String(describing: weather))")
+                self.applySnapshot(items: [weather], section: .main)
+            }.disposed(by: bag)
         
     }
     
     private func configureCollectionView() {
         collectionView = CustomCollectionView(frame: CGRect.zero, collectionViewLayout: layout())
-        collectionView.backgroundColor = .white
+        collectionView.backgroundColor = UIColor(named: "BackgroundColor")
         self.view.addSubview(collectionView)
         
         collectionView.snp.makeConstraints { make in
@@ -62,12 +70,12 @@ class MainViewController: UIViewController {
     }
     
     private func configureCell(for section: Section, item: Item, collectionView: UICollectionView, indexPath: IndexPath) -> UICollectionViewCell? {
-        print("item = \(item)")
+//        print("item = \(item)")
         switch section{
         case .main:
-            if let cityInfo = item as? City {
+            if let weatherData = item as? WeatherData {
                 let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "CityInfoCell", for: indexPath) as! CityInfoCell
-                cell.configure(cityInfo)
+                cell.configure(weatherData)
                 return cell
             } else {
                 return nil

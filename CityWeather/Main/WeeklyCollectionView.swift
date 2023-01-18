@@ -1,5 +1,5 @@
 //
-//  CustomCollectionView.swift
+//  WeeklyCollectionView.swift
 //  CityWeather
 //
 //  Created by 백소망 on 2023/01/17.
@@ -7,7 +7,7 @@
 
 import UIKit
 
-class CustomCollectionView: UICollectionView {
+class WeeklyCollectionView: UICollectionView {
 
     /*
     // Only override draw() if you perform custom drawing.

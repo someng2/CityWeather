@@ -15,14 +15,15 @@ final class MainViewModel {
     var weather = PublishSubject<WeatherData?>()
     var hourlyWeather = PublishSubject<[HourlyWeather]?>()
     var weeklyWeather = PublishSubject<[WeeklyWeather]?>()
+    var etcWeather = PublishSubject<[EtcWeather]?>()
     
     init() {
         self.city = BehaviorSubject<CityData>(value: CityData(id: 1839726, name: "Asan", country: "KR", coord: Coord(lon: 127.004173, lat: 36.783611)))
     }
     
     func getWeatherData() {
-        //        let now = Date()
-        //        print("now: \(now)")
+                let now = Date()
+                print("now: \(now)")
         
         if let lat = try? city.value().coord.lat,
            let lon = try? city.value().coord.lon {
@@ -43,7 +44,6 @@ final class MainViewModel {
                         let decoder = JSONDecoder()
                         let data = try decoder.decode(WeatherData.self, from: result)
                         self.weather.onNext(data)
-                        self.parseWeather(data)
                         //                    print("data: \(data)")
                     } catch {
                         print("error!\(error)")
@@ -56,7 +56,7 @@ final class MainViewModel {
         }
     }
     
-    private func parseWeather(_ data: WeatherData) {
+    func parseWeather(_ data: WeatherData) {
         var hourlyList: [HourlyWeather] = []
         var weeklyList: [WeeklyWeather] = []
         let weatherList = data.list
@@ -111,5 +111,13 @@ final class MainViewModel {
         let comps = cal.dateComponents([.weekday], from: date)
         
         return comps.weekday!
+    }
+    
+    func getEtcWeather(_ weather: WeatherData) {
+        let currentWeather = weather.list[0]
+        let etcWeather1 = EtcWeather(category: "습도", value: "\(currentWeather.main.humidity)%")
+        let etcWeather2 = EtcWeather(category: "구름", value: "\(currentWeather.clouds.all)%")
+        let etcWeather3 = EtcWeather(category: "바람 속도", value: "\(currentWeather.wind.speed)m/s")
+        self.etcWeather.onNext([etcWeather1, etcWeather2, etcWeather3])
     }
 }

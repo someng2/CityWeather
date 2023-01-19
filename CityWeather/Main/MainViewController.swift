@@ -231,7 +231,7 @@ class MainViewController: UIViewController {
             make.top.equalTo(hourlyWeatherCV.snp.bottom).offset(10)
             make.leading.equalToSuperview().offset(15)
             make.trailing.equalToSuperview().offset(-15)
-            make.height.equalTo(280)
+            make.height.equalTo(270)
         }
         weeklyDataSource = UICollectionViewDiffableDataSource<Section, Item>(collectionView: weeklyWeatherCV, cellProvider: { collectionView, indexPath, item in
             guard let section = Section(rawValue: indexPath.section) else { return nil}
@@ -277,23 +277,6 @@ class MainViewController: UIViewController {
         weeklyDataSource.apply(snapshot)
     }
     
-    private func weeklyWeatherLayout() -> UICollectionViewCompositionalLayout {
-        let spacing: CGFloat = 10
-        
-        let itemSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1), heightDimension: .estimated(40))
-        let item = NSCollectionLayoutItem(layoutSize: itemSize)
-        
-        let groupSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1), heightDimension: .estimated(40))
-        let group = NSCollectionLayoutGroup.vertical(layoutSize: groupSize, subitems: [item])
-        group.interItemSpacing = .fixed(10)
-        
-        let section = NSCollectionLayoutSection(group: group)
-        section.contentInsets = NSDirectionalEdgeInsets(top: 10, leading: 15, bottom: 10, trailing: 15)
-        section.interGroupSpacing = spacing
-        
-        return UICollectionViewCompositionalLayout(section: section)
-    }
-    
     private func hourlyWeatherLayout() -> UICollectionViewCompositionalLayout {
         let spacing: CGFloat = 10
         
@@ -310,5 +293,20 @@ class MainViewController: UIViewController {
         return UICollectionViewCompositionalLayout(section: section)
     }
     
-
+    private func weeklyWeatherLayout() -> UICollectionViewCompositionalLayout {
+        let spacing: CGFloat = 10
+        
+        let itemSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1), heightDimension: .estimated(40))
+        let item = NSCollectionLayoutItem(layoutSize: itemSize)
+        
+        let groupSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1), heightDimension: .estimated(40))
+        let group = NSCollectionLayoutGroup.vertical(layoutSize: groupSize, subitems: [item])
+        group.interItemSpacing = .fixed(10)
+        
+        let section = NSCollectionLayoutSection(group: group)
+        section.contentInsets = NSDirectionalEdgeInsets(top: 5, leading: 15, bottom: 5, trailing: 15)
+        section.interGroupSpacing = spacing
+        
+        return UICollectionViewCompositionalLayout(section: section)
+    }
 }

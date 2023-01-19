@@ -8,6 +8,7 @@
 import UIKit
 import SnapKit
 import RxSwift
+import MapKit
 
 class MainViewController: UIViewController {
     var scrollView: UIScrollView!
@@ -20,6 +21,8 @@ class MainViewController: UIViewController {
     var hourlyWeatherCV: UICollectionView!
     var weeklyWeatherCV: UICollectionView!
     var searchButton: UIButton!
+    var mapCellView: UIView!
+    var mapView: MKMapView!
     
     let viewModel = MainViewModel()
     let bag = DisposeBag()
@@ -40,6 +43,7 @@ class MainViewController: UIViewController {
         setupCityInfoView()
         setupHourlyWeatherCV()
         setupWeeklyWeatherCV()
+        setupMapView()
         subscribe()
     }
     
@@ -48,6 +52,7 @@ class MainViewController: UIViewController {
             .subscribe { city in
                 print("---> city: \(city)")
                 self.viewModel.getWeatherData()
+                self.configureMapLocation(city)
             }.disposed(by: bag)
         
         viewModel.weather
@@ -99,7 +104,7 @@ class MainViewController: UIViewController {
             make.leading.equalToSuperview()
             make.trailing.equalToSuperview()
             make.width.equalToSuperview()
-            make.height.equalTo(1000)
+            make.height.equalTo(1200)
         }
     }
     
@@ -108,7 +113,7 @@ class MainViewController: UIViewController {
         searchButton.backgroundColor = .white.withAlphaComponent(0.4)
         searchButton.layer.cornerRadius = 10
         searchButton.contentHorizontalAlignment = .left
-        searchButton.setTitle("   Search", for: .normal)
+        searchButton.setTitle("   도시/국가명 검색", for: .normal)
         searchButton.setTitleColor(.gray, for: .normal)
         let searchIcon = UIImage(systemName: "magnifyingglass")?.withTintColor(.gray, renderingMode: .alwaysOriginal)
         searchButton.setImage(searchIcon, for: .normal)
@@ -118,7 +123,7 @@ class MainViewController: UIViewController {
         contentView.addSubview(searchButton)
         
         searchButton.snp.makeConstraints { make in
-            make.top.equalToSuperview()
+            make.top.equalToSuperview().offset(15)
             make.leading.equalToSuperview().offset(20)
             make.trailing.equalToSuperview().offset(-20)
             make.height.equalTo(35)
@@ -206,7 +211,7 @@ class MainViewController: UIViewController {
         contentView.addSubview(hourlyWeatherCV)
         
         hourlyWeatherCV.snp.makeConstraints { make in
-            make.top.equalTo(cityInfoView.snp.bottom).offset(10)
+            make.top.equalTo(cityInfoView.snp.bottom)
             make.leading.equalToSuperview().offset(15)
             make.trailing.equalToSuperview().offset(-15)
             make.height.equalTo(150)
@@ -228,7 +233,7 @@ class MainViewController: UIViewController {
         contentView.addSubview(weeklyWeatherCV)
         
         weeklyWeatherCV.snp.makeConstraints { make in
-            make.top.equalTo(hourlyWeatherCV.snp.bottom).offset(10)
+            make.top.equalTo(hourlyWeatherCV.snp.bottom).offset(15)
             make.leading.equalToSuperview().offset(15)
             make.trailing.equalToSuperview().offset(-15)
             make.height.equalTo(270)
@@ -240,6 +245,41 @@ class MainViewController: UIViewController {
         })
         
         weeklyWeatherCV.register(WeeklyWeatherCell.classForCoder(), forCellWithReuseIdentifier: "WeeklyWeatherCell")
+    }
+    
+    private func setupMapView() {
+        mapCellView = UIView()
+        mapCellView.backgroundColor = UIColor(named: "CellBackgroundColor")
+        mapCellView.layer.cornerRadius = 15
+        contentView.addSubview(mapCellView)
+        mapCellView.snp.makeConstraints { make in
+            make.top.equalTo(weeklyWeatherCV.snp.bottom).offset(15)
+            make.leading.equalToSuperview().offset(15)
+            make.trailing.equalToSuperview().offset(-15)
+            make.height.equalTo(330)
+        }
+        
+        mapView = MKMapView()
+        mapView.overrideUserInterfaceStyle = .light
+        mapView.isZoomEnabled = true
+        mapCellView.addSubview(mapView)
+        mapView.snp.makeConstraints { make in
+            make.top.equalToSuperview().offset(15)
+            make.leading.equalToSuperview().offset(15)
+            make.trailing.equalToSuperview().offset(-15)
+            make.bottom.equalToSuperview().offset(-15)
+        }
+        mapView.delegate = self
+    }
+    
+    private func configureMapLocation(_ city: CityData) {
+        mapView.removeAnnotations(mapView.annotations)
+        let location = CLLocationCoordinate2D(latitude: city.coord.lat, longitude: city.coord.lon)
+        let pin = MKPointAnnotation()
+        pin.coordinate = location
+        pin.title = "현위치"
+        mapView.addAnnotation(pin)
+        mapView.setCenter(location, animated: true)
     }
     
     private func configureCell(for section: Section, item: Item, collectionView: UICollectionView, indexPath: IndexPath) -> UICollectionViewCell? {
@@ -309,4 +349,8 @@ class MainViewController: UIViewController {
         
         return UICollectionViewCompositionalLayout(section: section)
     }
+}
+
+extension MainViewController:  MKMapViewDelegate {
+    //Do something
 }

@@ -22,7 +22,7 @@ class SearchViewController: UIViewController {
         case main
     }
     var dataSource: UICollectionViewDiffableDataSource<Section, Item>!
-    let backgroundColor: UIColor = UIColor(named: "SkyBlue") ?? .white
+    let backgroundColor: UIColor = UIColor(named: "Green") ?? .white
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -47,7 +47,7 @@ class SearchViewController: UIViewController {
     private func embedSearchControl() {
         searchController = UISearchController(searchResultsController: nil)
         searchController.hidesNavigationBarDuringPresentation = false
-        searchController.searchBar.placeholder = "Search"
+        searchController.searchBar.placeholder = "도시/국가명 검색"
         searchController.searchBar.searchBarStyle = .prominent
         searchController.searchBar.tintColor = .white
         searchController.searchBar.delegate = self
@@ -116,6 +116,7 @@ extension SearchViewController: UISearchBarDelegate {
     func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
         guard let keyword = searchBar.text, !keyword.isEmpty else { return }
         searchVM.getCityData(filter: keyword)
+        self.dismiss(animated: true)    // dismiss search bar
     }
     
     func searchBarCancelButtonClicked(_ searchBar: UISearchBar) {
@@ -125,10 +126,12 @@ extension SearchViewController: UISearchBarDelegate {
 
 extension SearchViewController: UICollectionViewDelegate {
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        if let city = try? searchVM.cityList.value() {
-            let selected = city[indexPath.item]
-            mainVM.city.onNext(selected)
-            self.dismiss(animated: true)
-        }
+        guard collectionView.cellForItem(at: indexPath) is CityCell  else { return }
+            if let city = try? searchVM.cityList.value() {
+                let selected = city[indexPath.item]
+                mainVM.city.onNext(selected)
+                self.dismiss(animated: true)    // dismiss search view controller
+            }
+        
     }
 }

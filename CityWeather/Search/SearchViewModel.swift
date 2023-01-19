@@ -27,7 +27,10 @@ final class SearchViewModel {
             if filter == "" {
                 cityList.onNext(jsonArray)
             } else {
-                let filteredData = jsonArray.filter { $0.name.lowercased().contains(filter.lowercased()) }
+                let filteredData = jsonArray.filter { $0.name.lowercased().contains(filter.lowercased())
+                    ||
+                    $0.country.lowercased().contains(filter.lowercased())
+                }
                 cityList.onNext(filteredData)
                 //            print("--> filteredData: \(filteredData)")
             }

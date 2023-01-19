@@ -1,5 +1,5 @@
 //
-//  ViewController.swift
+//  MainViewController.swift
 //  CityWeather
 //
 //  Created by 백소망 on 2023/01/18.
@@ -9,18 +9,17 @@ import UIKit
 import SnapKit
 import RxSwift
 
-class ViewController: UIViewController {
+class MainViewController: UIViewController {
     var scrollView: UIScrollView!
     var contentView: UIView!
-    
     var cityInfoView: UIView!
     var cityNameLabel: UILabel!
     var tmpLabel: UILabel!
     var descriptionLabel: UILabel!
     var minMaxTmpLabel: UILabel!
-    
     var hourlyWeatherCV: UICollectionView!
     var weeklyWeatherCV: UICollectionView!
+    var searchButton: UIButton!
     
     let viewModel = MainViewModel()
     let bag = DisposeBag()
@@ -37,18 +36,25 @@ class ViewController: UIViewController {
         super.viewDidLoad()
         setupScrollView()
         setupContentView()
+        setupSearchButton()
         setupCityInfoView()
         setupHourlyWeatherCV()
         setupWeeklyWeatherCV()
-        bind()
-        viewModel.getWeatherData()
+        subscribe()
     }
     
-    private func bind() {
+    private func subscribe() {
+        viewModel.city
+            .subscribe { city in
+                print("---> city: \(city)")
+                self.viewModel.getWeatherData()
+            }.disposed(by: bag)
+        
         viewModel.weather
             .observe(on: MainScheduler.instance)
             .subscribe { weather in
                 if let weatherData = weather {
+//                    print("---> weahter: \(weatherData)")
                     self.showCityInfoData(weatherData)
                 }
             }.disposed(by: bag)
@@ -97,11 +103,41 @@ class ViewController: UIViewController {
         }
     }
     
+    private func setupSearchButton() {
+        searchButton = UIButton(frame: CGRect(x: 100, y: 100, width: self.view.bounds.width-40, height: 35))
+        searchButton.backgroundColor = .white.withAlphaComponent(0.4)
+        searchButton.layer.cornerRadius = 10
+        searchButton.contentHorizontalAlignment = .left
+        searchButton.setTitle("   Search", for: .normal)
+        searchButton.setTitleColor(.gray, for: .normal)
+        let searchIcon = UIImage(systemName: "magnifyingglass")?.withTintColor(.gray, renderingMode: .alwaysOriginal)
+        searchButton.setImage(searchIcon, for: .normal)
+        searchButton.contentEdgeInsets = UIEdgeInsets(top: 0, left: 10, bottom: 0, right: 10)
+        searchButton.addTarget(self, action: #selector(searchBtnTapped), for: .touchUpInside)
+        
+        contentView.addSubview(searchButton)
+        
+        searchButton.snp.makeConstraints { make in
+            make.top.equalToSuperview()
+            make.leading.equalToSuperview().offset(20)
+            make.trailing.equalToSuperview().offset(-20)
+            make.height.equalTo(35)
+        }
+    }
+    
+    @objc func searchBtnTapped(sender: UIButton!) {
+        let searchVC = SearchViewController()
+        searchVC.mainVM = viewModel
+        let navVC = UINavigationController(rootViewController: searchVC)
+        navVC.modalPresentationStyle = .fullScreen
+        self.present(navVC, animated: true)
+    }
+    
     private func setupCityInfoView() {
         cityInfoView = UIView()
         contentView.addSubview(cityInfoView)
         cityInfoView.snp.makeConstraints { make in
-            make.top.equalToSuperview().offset(30)
+            make.top.equalTo(searchButton.snp.bottom).offset(40)
             make.leading.equalToSuperview()
             make.trailing.equalToSuperview()
             make.height.equalTo(280)
@@ -181,11 +217,6 @@ class ViewController: UIViewController {
             let cell = self.configureCell(for: section, item: item, collectionView: self.hourlyWeatherCV, indexPath: indexPath)
             return cell
         })
-
-        var snapshot = NSDiffableDataSourceSnapshot<Section, Item>()
-        snapshot.appendSections([.hourly])
-        snapshot.appendItems([] , toSection: .hourly)
-        hourlyDataSource.apply(snapshot)
         
         hourlyWeatherCV.register(HourlyWeatherCell.classForCoder(), forCellWithReuseIdentifier: "HourlyWeatherCell")
     }
@@ -207,11 +238,6 @@ class ViewController: UIViewController {
             let cell = self.configureCell(for: section, item: item, collectionView: self.weeklyWeatherCV, indexPath: indexPath)
             return cell
         })
-        var snapshot = NSDiffableDataSourceSnapshot<Section, Item>()
-        snapshot.appendSections([.hourly, .weekly])
-        snapshot.appendItems([], toSection: .weekly)
-        snapshot.appendItems([], toSection: .hourly)
-        weeklyDataSource.apply(snapshot)
         
         weeklyWeatherCV.register(WeeklyWeatherCell.classForCoder(), forCellWithReuseIdentifier: "WeeklyWeatherCell")
     }
@@ -238,13 +264,15 @@ class ViewController: UIViewController {
     }
     
     private func applyHourlySnapshot(items: [Item], section: Section) {
-        var snapshot = hourlyDataSource.snapshot()
+        var snapshot = NSDiffableDataSourceSnapshot<Section, Item>()
+        snapshot.appendSections([.hourly, .weekly])
         snapshot.appendItems(items, toSection: section)
         hourlyDataSource.apply(snapshot)
     }
     
     private func applyWeeklySnapshot(items: [Item], section: Section) {
-        var snapshot = weeklyDataSource.snapshot()
+        var snapshot = NSDiffableDataSourceSnapshot<Section, Item>()
+        snapshot.appendSections([.hourly, .weekly])
         snapshot.appendItems(items, toSection: section)
         weeklyDataSource.apply(snapshot)
     }
@@ -282,4 +310,5 @@ class ViewController: UIViewController {
         return UICollectionViewCompositionalLayout(section: section)
     }
     
+
 }

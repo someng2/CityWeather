@@ -8,6 +8,7 @@
 import Foundation
 
 struct HourlyWeather: Hashable {
+    let id = UUID()
     var hour: String
     var weather: String
     var temparature: Int

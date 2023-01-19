@@ -11,43 +11,47 @@ import RxSwift
 
 final class MainViewModel {
     
-    var city: CityData
+    var city: BehaviorSubject<CityData>
     var weather = PublishSubject<WeatherData?>()
     var hourlyWeather = PublishSubject<[HourlyWeather]?>()
     var weeklyWeather = PublishSubject<[WeeklyWeather]?>()
     
     init() {
-        self.city = CityData(id: 1839726, name: "Asan", country: "KR", coord: Coord(lon: 127.004173, lat: 36.783611))
+        self.city = BehaviorSubject<CityData>(value: CityData(id: 1839726, name: "Asan", country: "KR", coord: Coord(lon: 127.004173, lat: 36.783611)))
     }
     
     func getWeatherData() {
-//        let now = Date()
-//        print("now: \(now)")
+        //        let now = Date()
+        //        print("now: \(now)")
         
-        let url = "https://api.openweathermap.org/data/2.5/forecast?lat=\(city.coord.lat)&lon=\(city.coord.lon)&appid=607fbd405599430259f383826c9a702d"
-        
-        AF.request(url,
-                   method: .get,
-                   parameters: ["lang":"kr", "units":"metric"],
-                   encoding: URLEncoding.default,
-                   headers: ["Content-Type":"application/json", "Accept":"application/json"])
-        .validate(statusCode: 200..<300)
-        .responseDecodable(of: WeatherData.self) { response in
-            switch response.result {
-            case .success:
-                guard let result = response.data else { return }
-                do {
-                    let decoder = JSONDecoder()
-                    let data = try decoder.decode(WeatherData.self, from: result)
-                    self.weather.onNext(data)
-                    self.parseWeather(data)
-//                    print("data: \(data)")
-                } catch {
-                    print("error!\(error)")
+        if let lat = try? city.value().coord.lat,
+           let lon = try? city.value().coord.lon {
+            
+            let url = "https://api.openweathermap.org/data/2.5/forecast?lat=\(lat)&lon=\(lon)&appid=607fbd405599430259f383826c9a702d"
+            
+            AF.request(url,
+                       method: .get,
+                       parameters: ["lang":"kr", "units":"metric"],
+                       encoding: URLEncoding.default,
+                       headers: ["Content-Type":"application/json", "Accept":"application/json"])
+            .validate(statusCode: 200..<300)
+            .responseDecodable(of: WeatherData.self) { response in
+                switch response.result {
+                case .success:
+                    guard let result = response.data else { return }
+                    do {
+                        let decoder = JSONDecoder()
+                        let data = try decoder.decode(WeatherData.self, from: result)
+                        self.weather.onNext(data)
+                        self.parseWeather(data)
+                        //                    print("data: \(data)")
+                    } catch {
+                        print("error!\(error)")
+                    }
+                    
+                case .failure(let error):
+                    print(error.localizedDescription)
                 }
-                
-            case .failure(let error):
-                print(error.localizedDescription)
             }
         }
     }
@@ -67,9 +71,9 @@ final class MainViewModel {
             minTmp: Int(round(weatherList[0].main.temp_min)),
             maxTmp: Int(round(weatherList[0].main.temp_max))
         )
-        var hourlyWeather = HourlyWeather(hour: "지금", weather: "", temparature: 0)
         
         weatherList.forEach { weather in
+            var hourlyWeather = HourlyWeather(hour: "지금", weather: "", temparature: 0)
             if date < weather.dt_txt.prefix(10) {
                 weeklyList.append(weeklyWeather)
                 dayCount += 1

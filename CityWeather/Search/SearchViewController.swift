@@ -23,7 +23,7 @@ class SearchViewController: UIViewController {
     }
     var dataSource: UICollectionViewDiffableDataSource<Section, Item>!
     let backgroundColor: UIColor = UIColor(named: "Green") ?? .white
-
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         self.view.backgroundColor = backgroundColor
@@ -33,11 +33,11 @@ class SearchViewController: UIViewController {
         searchVM.getCityData(filter: "")
         self.view.backgroundColor = backgroundColor
     }
-
+    
     private func subscribe() {
         searchVM.cityList
             .subscribe { cityList in
-//                print("---> cityList = \(cityList)")
+                //                print("---> cityList = \(cityList)")
                 if let data = cityList {
                     self.applySnapshot(items: data, section: .main)
                 }
@@ -89,7 +89,7 @@ class SearchViewController: UIViewController {
         switch section{
         case .main:
             let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "CityCell", for: indexPath) as! CityCell
-             cell.configure(item)
+            cell.configure(item)
             return cell
         }
     }
@@ -127,11 +127,10 @@ extension SearchViewController: UISearchBarDelegate {
 extension SearchViewController: UICollectionViewDelegate {
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
         guard collectionView.cellForItem(at: indexPath) is CityCell  else { return }
-            if let city = try? searchVM.cityList.value() {
-                let selected = city[indexPath.item]
-                mainVM.city.onNext(selected)
-                self.dismiss(animated: true)    // dismiss search view controller
-            }
-        
+        if let city = try? searchVM.cityList.value() {
+            let selected = city[indexPath.item]
+            mainVM.city.onNext(selected)
+            self.dismiss(animated: true)    // dismiss search view controller
+        }
     }
 }

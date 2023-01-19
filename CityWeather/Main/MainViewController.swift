@@ -20,6 +20,7 @@ class MainViewController: UIViewController {
     var minMaxTmpLabel: UILabel!
     var hourlyWeatherCV: UICollectionView!
     var weeklyWeatherCV: UICollectionView!
+    var etcWeatherCV: UICollectionView!
     var searchButton: UIButton!
     var mapCellView: UIView!
     var mapView: MKMapView!
@@ -31,10 +32,12 @@ class MainViewController: UIViewController {
     enum Section: Int {
         case hourly
         case weekly
+        case etc
     }
     var hourlyDataSource: UICollectionViewDiffableDataSource<Section, Item>!
     var weeklyDataSource: UICollectionViewDiffableDataSource<Section, Item>!
-    
+    var etcDataSource: UICollectionViewDiffableDataSource<Section, Item>!
+     
     override func viewDidLoad() {
         super.viewDidLoad()
         setupScrollView()
@@ -44,6 +47,7 @@ class MainViewController: UIViewController {
         setupHourlyWeatherCV()
         setupWeeklyWeatherCV()
         setupMapView()
+        setupEtcWeatherCV()
         subscribe()
     }
     
@@ -56,18 +60,17 @@ class MainViewController: UIViewController {
             }.disposed(by: bag)
         
         viewModel.weather
-            .observe(on: MainScheduler.instance)
             .subscribe { weather in
                 if let weatherData = weather {
-//                    print("---> weahter: \(weatherData)")
                     self.showCityInfoData(weatherData)
+                    self.viewModel.parseWeather(weatherData)
+                    self.viewModel.getEtcWeather(weatherData)
                 }
             }.disposed(by: bag)
         
         viewModel.weeklyWeather
             .observe(on: MainScheduler.instance)
             .subscribe { weatherList in
-//                print("---> weeklyWeather: \(String(describing: weatherList))")
                 if let items = weatherList {
                     self.applyWeeklySnapshot(items: items, section: .weekly)
                 }
@@ -76,9 +79,16 @@ class MainViewController: UIViewController {
         viewModel.hourlyWeather
             .observe(on: MainScheduler.instance)
             .subscribe { list in
-//                print("---> hourlyWeather: \(String(describing: list))")
                 if let items = list {
                     self.applyHourlySnapshot(items: items, section: .hourly)
+                }
+            }.disposed(by: bag)
+        
+        viewModel.etcWeather
+            .observe(on: MainScheduler.instance)
+            .subscribe { weatherList in
+                if let items = weatherList {
+                    self.applyEtcSnapshot(items: items, section: .etc)
                 }
             }.disposed(by: bag)
     }
@@ -104,7 +114,7 @@ class MainViewController: UIViewController {
             make.leading.equalToSuperview()
             make.trailing.equalToSuperview()
             make.width.equalToSuperview()
-            make.height.equalTo(1200)
+            make.height.equalTo(1580)
         }
     }
     
@@ -117,7 +127,8 @@ class MainViewController: UIViewController {
         searchButton.setTitleColor(.gray, for: .normal)
         let searchIcon = UIImage(systemName: "magnifyingglass")?.withTintColor(.gray, renderingMode: .alwaysOriginal)
         searchButton.setImage(searchIcon, for: .normal)
-        searchButton.contentEdgeInsets = UIEdgeInsets(top: 0, left: 10, bottom: 0, right: 10)
+        searchButton.configuration = UIButton.Configuration.plain()
+        searchButton.configuration?.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 10, bottom: 0, trailing: 10)
         searchButton.addTarget(self, action: #selector(searchBtnTapped), for: .touchUpInside)
         
         contentView.addSubview(searchButton)
@@ -269,7 +280,30 @@ class MainViewController: UIViewController {
             make.trailing.equalToSuperview().offset(-15)
             make.bottom.equalToSuperview().offset(-15)
         }
-        mapView.delegate = self
+    }
+    
+    private func setupEtcWeatherCV() {
+        etcWeatherCV = HourlyCollectionView(frame: CGRect.zero, collectionViewLayout: etcWeatherLayout())
+        etcWeatherCV.backgroundColor = UIColor(named: "BackgroundColor")
+//        etcWeatherCV.layer.cornerRadius = 15
+        contentView.addSubview(etcWeatherCV)
+        
+        etcWeatherCV.snp.makeConstraints { make in
+            make.top.equalTo(mapCellView.snp.bottom).offset(15)
+            make.leading.equalToSuperview().offset(15)
+            make.trailing.equalToSuperview().offset(-15)
+            make.height.equalTo(390)
+        }
+        
+        etcDataSource = UICollectionViewDiffableDataSource<Section, Item>(collectionView: etcWeatherCV, cellProvider: { collectionView, indexPath, item in
+            guard let section = Section(rawValue: indexPath.section) else { return nil}
+            let cell = self.configureCell(for: section, item: item, collectionView: self.etcWeatherCV, indexPath: indexPath)
+            cell?.contentView.backgroundColor = UIColor(named: "CellBackgroundColor")
+            cell?.contentView.layer.cornerRadius = 15
+            return cell
+        })
+        
+        etcWeatherCV.register(EtcWeatherCell.classForCoder(), forCellWithReuseIdentifier: "EtcWeatherCell")
     }
     
     private func configureMapLocation(_ city: CityData) {
@@ -300,7 +334,15 @@ class MainViewController: UIViewController {
             } else {
                 return nil
             }
+        case .etc:
+            if let etcWeather = item as? EtcWeather {
+                let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "EtcWeatherCell", for: indexPath) as! EtcWeatherCell
+                cell.configure(etcWeather)
+                return cell
+            }
+            return nil
         }
+    
     }
     
     private func applyHourlySnapshot(items: [Item], section: Section) {
@@ -317,9 +359,15 @@ class MainViewController: UIViewController {
         weeklyDataSource.apply(snapshot)
     }
     
+    private func applyEtcSnapshot(items: [Item], section: Section) {
+        var snapshot = NSDiffableDataSourceSnapshot<Section, Item>()
+        snapshot.appendSections([.hourly, .weekly, .etc])
+        snapshot.appendItems(items, toSection: section)
+        etcDataSource.apply(snapshot)
+    }
+    
     private func hourlyWeatherLayout() -> UICollectionViewCompositionalLayout {
         let spacing: CGFloat = 10
-        
         let itemSize = NSCollectionLayoutSize(widthDimension: .absolute(60), heightDimension: .fractionalHeight(1))
         let item = NSCollectionLayoutItem(layoutSize: itemSize)
         
@@ -329,13 +377,11 @@ class MainViewController: UIViewController {
         let section = NSCollectionLayoutSection(group: group)
         section.contentInsets = NSDirectionalEdgeInsets(top: 20, leading: 10, bottom: 20, trailing: 10)
         section.interGroupSpacing = spacing
-        
         return UICollectionViewCompositionalLayout(section: section)
     }
     
     private func weeklyWeatherLayout() -> UICollectionViewCompositionalLayout {
         let spacing: CGFloat = 10
-        
         let itemSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1), heightDimension: .estimated(40))
         let item = NSCollectionLayoutItem(layoutSize: itemSize)
         
@@ -346,11 +392,20 @@ class MainViewController: UIViewController {
         let section = NSCollectionLayoutSection(group: group)
         section.contentInsets = NSDirectionalEdgeInsets(top: 5, leading: 15, bottom: 5, trailing: 15)
         section.interGroupSpacing = spacing
-        
         return UICollectionViewCompositionalLayout(section: section)
     }
-}
-
-extension MainViewController:  MKMapViewDelegate {
-    //Do something
+    
+    private func etcWeatherLayout() -> UICollectionViewCompositionalLayout {
+        let spacing: CGFloat = 10
+        let itemSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(0.5), heightDimension: .fractionalWidth(0.5))
+        let item = NSCollectionLayoutItem(layoutSize: itemSize)
+        
+        let groupSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1), heightDimension: .fractionalWidth(0.5))
+        let group = NSCollectionLayoutGroup.horizontal(layoutSize: groupSize, repeatingSubitem: item, count: 2)
+        group.interItemSpacing = .fixed(15)
+        
+        let section = NSCollectionLayoutSection(group: group)
+        section.interGroupSpacing = spacing
+        return UICollectionViewCompositionalLayout(section: section)
+    }
 }

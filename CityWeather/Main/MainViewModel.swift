@@ -44,11 +44,9 @@ final class MainViewModel {
                         let decoder = JSONDecoder()
                         let data = try decoder.decode(WeatherData.self, from: result)
                         self.weather.onNext(data)
-                        //                    print("data: \(data)")
                     } catch {
                         print("error!\(error)")
                     }
-                    
                 case .failure(let error):
                     print(error.localizedDescription)
                 }
@@ -80,7 +78,7 @@ final class MainViewModel {
                 date = weather.dt_txt.prefix(10)
                 dayInt += 1
                 let now = (dayInt-1)%7
-                weeklyWeather = WeeklyWeather(day: (dayList[now]), weather: "", minTmp: 100, maxTmp: 0)
+                weeklyWeather = WeeklyWeather(day: (dayList[now]), weather: "", minTmp: 1000, maxTmp: -1000)
             }
             if dayCount < 5 {
                 if weather.dt_txt.suffix(8) == "15:00:00" {
@@ -90,6 +88,12 @@ final class MainViewModel {
                 weeklyWeather.minTmp = min(weeklyWeather.minTmp, Int(round(weather.main.temp_min)))
             }
             if dayCount <= 1 {
+                if weather.dt_txt.suffix(8) == "00:00:00" && dayCount == 1{
+                    hourlyWeather.hour = "내일"
+                    hourlyWeather.weather = "내일"
+                    hourlyWeather.temparature = 0
+                    hourlyList.append(hourlyWeather)
+                }
                 if hourCount > 0 {
                     hourlyWeather.hour = "\(weather.dt_txt.suffix(8).prefix(2))시"
                 }
@@ -113,7 +117,7 @@ final class MainViewModel {
         return comps.weekday!
     }
     
-    func getEtcWeather(_ weather: WeatherData) {
+    func parseEtcWeather(_ weather: WeatherData) {
         let currentWeather = weather.list[0]
         let etcWeather1 = EtcWeather(category: "습도", value: "\(currentWeather.main.humidity)%")
         let etcWeather2 = EtcWeather(category: "구름", value: "\(currentWeather.clouds.all)%")

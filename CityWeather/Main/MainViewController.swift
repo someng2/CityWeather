@@ -54,7 +54,7 @@ class MainViewController: UIViewController {
     private func subscribe() {
         viewModel.city
             .subscribe { city in
-                print("---> city: \(city)")
+//                print("---> city: \(city)")
                 self.viewModel.getWeatherData()
                 self.configureMapLocation(city)
             }.disposed(by: bag)
@@ -64,7 +64,7 @@ class MainViewController: UIViewController {
                 if let weatherData = weather {
                     self.showCityInfoData(weatherData)
                     self.viewModel.parseWeather(weatherData)
-                    self.viewModel.getEtcWeather(weatherData)
+                    self.viewModel.parseEtcWeather(weatherData)
                 }
             }.disposed(by: bag)
         
@@ -132,7 +132,6 @@ class MainViewController: UIViewController {
         searchButton.addTarget(self, action: #selector(searchBtnTapped), for: .touchUpInside)
         
         contentView.addSubview(searchButton)
-        
         searchButton.snp.makeConstraints { make in
             make.top.equalToSuperview().offset(15)
             make.leading.equalToSuperview().offset(20)
@@ -153,43 +152,42 @@ class MainViewController: UIViewController {
         cityInfoView = UIView()
         contentView.addSubview(cityInfoView)
         cityInfoView.snp.makeConstraints { make in
-            make.top.equalTo(searchButton.snp.bottom).offset(40)
+            make.top.equalTo(searchButton.snp.bottom).offset(35)
             make.leading.equalToSuperview()
             make.trailing.equalToSuperview()
-            make.height.equalTo(280)
+            make.height.equalTo(275)
         }
         cityNameLabel = UILabel()
         cityNameLabel.textColor = .white
         cityNameLabel.font = .systemFont(ofSize: 36)
         cityInfoView.addSubview(cityNameLabel)
-        
         cityNameLabel.snp.makeConstraints { make in
             make.top.equalToSuperview()
             make.centerX.equalToSuperview()
         }
+        
         tmpLabel = UILabel()
         tmpLabel.textColor = .white
-        tmpLabel.font = .systemFont(ofSize: 80)
+        tmpLabel.font = .systemFont(ofSize: 82)
         cityInfoView.addSubview(tmpLabel)
-        
         tmpLabel.snp.makeConstraints { make in
             make.top.equalTo(cityNameLabel.snp.bottom).offset(20)
             make.centerX.equalToSuperview()
         }
+        
         descriptionLabel = UILabel()
         descriptionLabel.textColor = .white
         descriptionLabel.font = .systemFont(ofSize: 30)
         cityInfoView.addSubview(descriptionLabel)
-        
         descriptionLabel.snp.makeConstraints { make in
-            make.top.equalTo(tmpLabel.snp.bottom).offset(20)
+            make.top.equalTo(tmpLabel.snp.bottom).offset(15)
             make.centerX.equalToSuperview()
         }
+        
         minMaxTmpLabel = UILabel()
         minMaxTmpLabel.textColor = .white
-        minMaxTmpLabel.font = .systemFont(ofSize: 22)
+        minMaxTmpLabel.font = .systemFont(ofSize: 21)
         cityInfoView.addSubview(minMaxTmpLabel)
-        
         minMaxTmpLabel.snp.makeConstraints { make in
             make.top.equalTo(descriptionLabel.snp.bottom).offset(15)
             make.centerX.equalToSuperview()
@@ -242,12 +240,11 @@ class MainViewController: UIViewController {
         weeklyWeatherCV.backgroundColor = UIColor(named: "CellBackgroundColor")
         weeklyWeatherCV.layer.cornerRadius = 15
         contentView.addSubview(weeklyWeatherCV)
-        
         weeklyWeatherCV.snp.makeConstraints { make in
             make.top.equalTo(hourlyWeatherCV.snp.bottom).offset(15)
             make.leading.equalToSuperview().offset(15)
             make.trailing.equalToSuperview().offset(-15)
-            make.height.equalTo(270)
+            make.height.equalTo(280)
         }
         weeklyDataSource = UICollectionViewDiffableDataSource<Section, Item>(collectionView: weeklyWeatherCV, cellProvider: { collectionView, indexPath, item in
             guard let section = Section(rawValue: indexPath.section) else { return nil}
@@ -285,9 +282,7 @@ class MainViewController: UIViewController {
     private func setupEtcWeatherCV() {
         etcWeatherCV = HourlyCollectionView(frame: CGRect.zero, collectionViewLayout: etcWeatherLayout())
         etcWeatherCV.backgroundColor = UIColor(named: "BackgroundColor")
-//        etcWeatherCV.layer.cornerRadius = 15
         contentView.addSubview(etcWeatherCV)
-        
         etcWeatherCV.snp.makeConstraints { make in
             make.top.equalTo(mapCellView.snp.bottom).offset(15)
             make.leading.equalToSuperview().offset(15)
@@ -322,6 +317,7 @@ class MainViewController: UIViewController {
             if let weeklyWeather = item as? WeeklyWeather {
                 let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "WeeklyWeatherCell", for: indexPath) as! WeeklyWeatherCell
                 cell.configure(weeklyWeather)
+                cell.layer.addBorder(index: indexPath[1], edge: .top, color: .white.withAlphaComponent(0.3), thickness: 1)
                 return cell
             } else {
                 return nil
@@ -342,7 +338,6 @@ class MainViewController: UIViewController {
             }
             return nil
         }
-    
     }
     
     private func applyHourlySnapshot(items: [Item], section: Section) {
@@ -381,17 +376,14 @@ class MainViewController: UIViewController {
     }
     
     private func weeklyWeatherLayout() -> UICollectionViewCompositionalLayout {
-        let spacing: CGFloat = 10
-        let itemSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1), heightDimension: .estimated(40))
+        let itemSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1), heightDimension: .estimated(50))
         let item = NSCollectionLayoutItem(layoutSize: itemSize)
         
-        let groupSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1), heightDimension: .estimated(40))
+        let groupSize = NSCollectionLayoutSize(widthDimension: .fractionalWidth(1), heightDimension: .estimated(50))
         let group = NSCollectionLayoutGroup.vertical(layoutSize: groupSize, subitems: [item])
-        group.interItemSpacing = .fixed(10)
         
         let section = NSCollectionLayoutSection(group: group)
         section.contentInsets = NSDirectionalEdgeInsets(top: 5, leading: 15, bottom: 5, trailing: 15)
-        section.interGroupSpacing = spacing
         return UICollectionViewCompositionalLayout(section: section)
     }
     

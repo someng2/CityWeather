@@ -55,7 +55,12 @@ class HourlyWeatherCell: UICollectionViewCell {
     
     func configure(_ item: HourlyWeather) {
         hourLabel.text = item.hour
-        weatherIconView.image = UIImage(named: item.weather)
-        tmpLabel.text = "\(item.temparature)°"
+        if item.weather == "내일" {
+            weatherIconView.image = UIImage(systemName: "arrow.right.circle")?.withTintColor(.white.withAlphaComponent(0.8), renderingMode: .alwaysOriginal)
+        } else {
+            weatherIconView.image = UIImage(named: item.weather)
+            tmpLabel.text = "\(item.temparature)°"
+        }
+        
     }
 }

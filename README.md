@@ -3,7 +3,7 @@
 #### 기술 스택
 - UIKit, RxSwift, Snapkit, OpenWeather API, Alamofire, MKMapView
 #### 앱 실행 방법
-- 프로젝트 zip 파일 다운
+- 프로젝트 `zip` 파일 다운
 - 터미널에서 파일 위치로 이동하여 `pod install` 실행
 - `.xcworkspace` 파일 실행
 #### 화면

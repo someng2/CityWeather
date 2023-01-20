@@ -73,7 +73,7 @@ class WeeklyWeatherCell: UICollectionViewCell {
 
 extension CALayer {
     func addBorder(index: Int, edge: UIRectEdge, color: UIColor, thickness: CGFloat) {
-        if index == 0 { return }
+        if index >= 4 { return }
         let border = CALayer()
         
         switch edge {

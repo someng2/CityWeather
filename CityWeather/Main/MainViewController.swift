@@ -317,7 +317,8 @@ class MainViewController: UIViewController {
             if let weeklyWeather = item as? WeeklyWeather {
                 let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "WeeklyWeatherCell", for: indexPath) as! WeeklyWeatherCell
                 cell.configure(weeklyWeather)
-                cell.layer.addBorder(index: indexPath[1], edge: .top, color: .white.withAlphaComponent(0.3), thickness: 1)
+                cell.layer.addBorder(index: indexPath[1], edge: .bottom, color: .white.withAlphaComponent(0.3), thickness: 1)
+                
                 return cell
             } else {
                 return nil

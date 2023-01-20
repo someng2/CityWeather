@@ -22,14 +22,9 @@ final class MainViewModel {
     }
     
     func getWeatherData() {
-                let now = Date()
-                print("now: \(now)")
-        
         if let lat = try? city.value().coord.lat,
            let lon = try? city.value().coord.lon {
-            
             let url = "https://api.openweathermap.org/data/2.5/forecast?lat=\(lat)&lon=\(lon)&appid=607fbd405599430259f383826c9a702d"
-            
             AF.request(url,
                        method: .get,
                        parameters: ["lang":"kr", "units":"metric"],

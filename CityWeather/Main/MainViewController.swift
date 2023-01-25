@@ -11,19 +11,36 @@ import RxSwift
 import MapKit
 
 class MainViewController: UIViewController {
-    var scrollView: UIScrollView!
-    var contentView: UIView!
-    var cityInfoView: UIView!
-    var cityNameLabel: UILabel!
-    var tmpLabel: UILabel!
-    var descriptionLabel: UILabel!
-    var minMaxTmpLabel: UILabel!
-    var hourlyWeatherCV: UICollectionView!
-    var weeklyWeatherCV: UICollectionView!
-    var etcWeatherCV: UICollectionView!
-    var searchButton: UIButton!
-    var mapCellView: UIView!
-    var mapView: MKMapView!
+    lazy var scrollView: UIScrollView = {
+        let scrollView = UIScrollView()
+        scrollView.backgroundColor = UIColor(named: "BackgroundColor")
+        return scrollView
+    } ()
+    lazy var contentView = UIView()
+    lazy var cityInfoView = UIView()
+    lazy var cityNameLabel = UILabel()
+    lazy var tmpLabel = UILabel()
+    lazy var descriptionLabel = UILabel()
+    lazy var minMaxTmpLabel = UILabel()
+    lazy var hourlyWeatherCV = UICollectionView()
+    lazy var weeklyWeatherCV = UICollectionView()
+    lazy var etcWeatherCV = UICollectionView()
+    lazy var searchButton: UIButton = {
+        let searchButton = UIButton(frame: CGRect(x: 100, y: 100, width: self.view.bounds.width-40, height: 35))
+        searchButton.backgroundColor = .white.withAlphaComponent(0.4)
+        searchButton.layer.cornerRadius = 10
+        searchButton.contentHorizontalAlignment = .left
+        searchButton.setTitle("   도시/국가명 검색", for: .normal)
+        searchButton.setTitleColor(.gray, for: .normal)
+        let searchIcon = UIImage(systemName: "magnifyingglass")?.withTintColor(.gray, renderingMode: .alwaysOriginal)
+        searchButton.setImage(searchIcon, for: .normal)
+        searchButton.configuration = UIButton.Configuration.plain()
+        searchButton.configuration?.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 10, bottom: 0, trailing: 10)
+        searchButton.addTarget(self, action: #selector(searchBtnTapped), for: .touchUpInside)
+        return searchButton
+    }()
+    lazy var mapCellView = UIView()
+    lazy var mapView = MKMapView()
     
     let viewModel = MainViewModel()
     let bag = DisposeBag()
@@ -53,49 +70,47 @@ class MainViewController: UIViewController {
     
     private func subscribe() {
         viewModel.city
-            .subscribe { city in
+            .subscribe { [weak self] city in
 //                print("---> city: \(city)")
-                self.viewModel.getWeatherData()
-                self.configureMapLocation(city)
+                self?.viewModel.getWeatherData()
+                self?.configureMapLocation(city)
             }.disposed(by: bag)
         
         viewModel.weather
-            .subscribe { weather in
+            .subscribe { [weak self] weather in
                 if let weatherData = weather {
-                    self.showCityInfoData(weatherData)
-                    self.viewModel.parseWeather(weatherData)
-                    self.viewModel.parseEtcWeather(weatherData)
+                    self?.showCityInfoData(weatherData)
+                    self?.viewModel.parseWeather(weatherData)
+                    self?.viewModel.parseEtcWeather(weatherData)
                 }
             }.disposed(by: bag)
         
         viewModel.weeklyWeather
             .observe(on: MainScheduler.instance)
-            .subscribe { weatherList in
+            .subscribe { [weak self] weatherList in
                 if let items = weatherList {
-                    self.applyWeeklySnapshot(items: items, section: .weekly)
+                    self?.applyWeeklySnapshot(items: items, section: .weekly)
                 }
             }.disposed(by: bag)
         
         viewModel.hourlyWeather
             .observe(on: MainScheduler.instance)
-            .subscribe { list in
+            .subscribe { [weak self] list in
                 if let items = list {
-                    self.applyHourlySnapshot(items: items, section: .hourly)
+                    self?.applyHourlySnapshot(items: items, section: .hourly)
                 }
             }.disposed(by: bag)
         
         viewModel.etcWeather
             .observe(on: MainScheduler.instance)
-            .subscribe { weatherList in
+            .subscribe { [weak self] weatherList in
                 if let items = weatherList {
-                    self.applyEtcSnapshot(items: items, section: .etc)
+                    self?.applyEtcSnapshot(items: items, section: .etc)
                 }
             }.disposed(by: bag)
     }
     
     private func setupScrollView() {
-        scrollView = UIScrollView()
-        scrollView.backgroundColor = UIColor(named: "BackgroundColor")
         self.view.addSubview(scrollView)
         scrollView.snp.makeConstraints { make in
             make.top.equalToSuperview()
@@ -106,7 +121,6 @@ class MainViewController: UIViewController {
     }
     
     private func setupContentView() {
-        contentView = UIView()
         scrollView.addSubview(contentView)
         contentView.snp.makeConstraints { make in
             make.top.equalToSuperview()
@@ -119,18 +133,6 @@ class MainViewController: UIViewController {
     }
     
     private func setupSearchButton() {
-        searchButton = UIButton(frame: CGRect(x: 100, y: 100, width: self.view.bounds.width-40, height: 35))
-        searchButton.backgroundColor = .white.withAlphaComponent(0.4)
-        searchButton.layer.cornerRadius = 10
-        searchButton.contentHorizontalAlignment = .left
-        searchButton.setTitle("   도시/국가명 검색", for: .normal)
-        searchButton.setTitleColor(.gray, for: .normal)
-        let searchIcon = UIImage(systemName: "magnifyingglass")?.withTintColor(.gray, renderingMode: .alwaysOriginal)
-        searchButton.setImage(searchIcon, for: .normal)
-        searchButton.configuration = UIButton.Configuration.plain()
-        searchButton.configuration?.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 10, bottom: 0, trailing: 10)
-        searchButton.addTarget(self, action: #selector(searchBtnTapped), for: .touchUpInside)
-        
         contentView.addSubview(searchButton)
         searchButton.snp.makeConstraints { make in
             make.top.equalToSuperview().offset(15)

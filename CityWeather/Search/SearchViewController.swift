@@ -36,10 +36,10 @@ class SearchViewController: UIViewController {
     
     private func subscribe() {
         searchVM.cityList
-            .subscribe { cityList in
+            .subscribe { [weak self] cityList in
                 //                print("---> cityList = \(cityList)")
                 if let data = cityList {
-                    self.applySnapshot(items: data, section: .main)
+                    self?.applySnapshot(items: data, section: .main)
                 }
             }.disposed(by: bag)
     }
